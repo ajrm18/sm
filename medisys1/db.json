@@ -1,0 +1,88 @@
+{
+  "pacientes": [
+    {
+      "id": 1,
+      "nombres": "Orlando",
+      "apellidos": "Rosero",
+      "cedula": "1712345678",
+      "email": "orlando@email.com",
+      "fechaNac": "1964-03-15",
+      "sexo": "Masculino",
+      "telefono": "0991234567",
+      "tipoSangre": "O+",
+      "alergias": "Ninguna conocida",
+      "ocupacion": "Chofer profesional",
+      "provincia": "Pichincha"
+    },
+    {
+      "id": 2,
+      "nombres": "Rocío",
+      "apellidos": "Malquín",
+      "cedula": "1787654321",
+      "email": "rocio@email.com",
+      "fechaNac": "1968-07-22",
+      "sexo": "Femenino",
+      "telefono": "0997654321",
+      "tipoSangre": "A+",
+      "alergias": "Penicilina",
+      "ocupacion": "Ama de casa",
+      "provincia": "Pichincha"
+    },
+    {
+      "id": 3,
+      "nombres": "Juan Carlos",
+      "apellidos": "García López",
+      "cedula": "0926687856",
+      "email": "juan.garcia@email.com",
+      "fechaNac": "1985-07-20",
+      "sexo": "Masculino",
+      "telefono": "0987654321",
+      "tipoSangre": "B+",
+      "alergias": "Ninguna",
+      "ocupacion": "Ingeniero",
+      "provincia": "Azuay"
+    },
+    {
+      "id": 4,
+      "nombres": "María Alejandra",
+      "apellidos": "Zambrano Soto",
+      "cedula": "1354268912",
+      "email": "maria.zambrano@email.com",
+      "fechaNac": "1992-02-14",
+      "sexo": "Femenino",
+      "telefono": "0983456789",
+      "tipoSangre": "AB+",
+      "alergias": "Amoxicilina",
+      "ocupacion": "Enfermera",
+      "provincia": "Manabí"
+    },
+    {
+      "id": 5,
+      "nombres": "Carlos Andrés",
+      "apellidos": "Moreno Vega",
+      "cedula": "0923456789",
+      "email": "carlos.moreno@email.com",
+      "fechaNac": "1980-11-05",
+      "sexo": "Masculino",
+      "telefono": "0982345678",
+      "tipoSangre": "O-",
+      "alergias": "Ninguna",
+      "ocupacion": "Médico",
+      "provincia": "Guayas"
+    },
+    {
+      "id": 6,
+      "nombres": "Sofía",
+      "apellidos": "Rodríguez Santos",
+      "cedula": "2012345678",
+      "email": "sofia.rodriguez@email.com",
+      "fechaNac": "1995-05-22",
+      "sexo": "Femenino",
+      "telefono": "0981234567",
+      "tipoSangre": "A-",
+      "alergias": "Penicilina",
+      "ocupacion": "Psicóloga",
+      "provincia": "Tungurahua"
+    }
+  ]
+}

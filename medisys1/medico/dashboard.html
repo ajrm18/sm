@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediSys – Panel Médico</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Lora:ital@0;1&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 60 60" fill="none"><rect x="24" y="6" width="12" height="48" rx="6" fill="white" opacity="0.95"/><rect x="6" y="24" width="48" height="12" rx="6" fill="white" opacity="0.95"/></svg>
+      <div class="sidebar-logo-text"><h2>MediSys</h2><span>Panel Médico</span></div>
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">🩺</div>
+      <div class="sidebar-user-name" id="sidebarNombre">—</div>
+      <div class="sidebar-user-role" id="sidebarEsp">—</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">Principal</div>
+      <a class="nav-item active" onclick="showSection('dashboard')"><span class="nav-icon">📊</span> Inicio</a>
+      <div class="sidebar-section">Gestión</div>
+      <a class="nav-item" onclick="showSection('pacientes')"><span class="nav-icon">👥</span> Pacientes</a>
+      <a class="nav-item" onclick="showSection('historias')"><span class="nav-icon">📋</span> Historias Clínicas</a>
+      <a class="nav-item" onclick="showSection('consultas')"><span class="nav-icon">📝</span> Consultas</a>
+      <a class="nav-item" onclick="showSection('recetas')"><span class="nav-icon">💊</span> Recetas</a>
+      <a class="nav-item" onclick="showSection('citas')"><span class="nav-icon">📅</span> Citas</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">⬅ Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <!-- CONTENIDO -->
+  <main class="main-content">
+    <div class="theme-toggle-dashboard">
+      <button id="themeToggleDash" onclick="toggleThemeDash()" title="Cambiar tema">🌙</button>
+    </div>
+
+    <!-- ══ DASHBOARD ══ -->
+    <section id="sec-dashboard">
+      <div class="page-header">
+        <div class="page-title">
+          <h1 id="welcomeMsg">Bienvenido</h1>
+          <p id="fechaHoy"></p>
+        </div>
+      </div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📅 Próximas citas</span></div>
+          <div id="dashCitas"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">👥 Últimos pacientes</span></div>
+          <div id="dashPacientes"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ PACIENTES ══ -->
+    <section id="sec-pacientes" class="hidden">
+      <div class="page-header">
+        <div class="page-title"><h1>👥 Pacientes</h1><p>Gestión del registro de pacientes</p></div>
+        <button class="btn btn-primary" onclick="abrirModalPaciente()">➕ Nuevo paciente</button>
+      </div>
+      <div class="card">
+        <div class="search-bar">
+          <input class="search-input" id="searchPac" placeholder="🔍  Buscar por nombre o cédula…" oninput="renderPacientes()"/>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Cédula</th><th>Edad</th><th>Tipo sangre</th><th>Teléfono</th><th>Acciones</th></tr></thead>
+            <tbody id="tablePacientes"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ HISTORIAS ══ -->
+    <section id="sec-historias" class="hidden">
+      <div class="page-header">
+        <div class="page-title"><h1>📋 Historias Clínicas</h1><p>Antecedentes médicos de cada paciente</p></div>
+      </div>
+      <div class="card">
+        <div class="search-bar">
+          <input class="search-input" id="searchHist" placeholder="🔍  Buscar paciente…" oninput="renderHistorias()"/>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Paciente</th><th>Enf. crónicas</th><th>Última actualización</th><th>Acciones</th></tr></thead>
+            <tbody id="tableHistorias"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ CONSULTAS ══ -->
+    <section id="sec-consultas" class="hidden">
+      <div class="page-header">
+        <div class="page-title"><h1>Consultas</h1><p>Registro de atenciones médicas</p></div>
+        <button class="btn btn-primary" onclick="abrirModalConsulta()">+ Nueva consulta</button>
+      </div>
+      <div class="card">
+        <div class="search-bar">
+          <input class="search-input" id="searchCons" placeholder="🔍  Buscar por paciente…" oninput="renderConsultas()"/>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Paciente</th><th>Diagnóstico</th><th>Acciones</th></tr></thead>
+            <tbody id="tableConsultas"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ RECETAS ══ -->
+    <section id="sec-recetas" class="hidden">
+      <div class="page-header">
+        <div class="page-title"><h1>Recetas</h1><p>Recetas médicas generadas</p></div>
+      </div>
+      <div class="card">
+        <div class="search-bar">
+          <input class="search-input" id="searchRec" placeholder="🔍  Buscar por paciente…" oninput="renderRecetas()"/>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Paciente</th><th>Medicamentos</th><th>Acciones</th></tr></thead>
+            <tbody id="tableRecetas"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ CITAS ══ -->
+    <section id="sec-citas" class="hidden">
+      <div class="page-header">
+        <div class="page-title"><h1>Citas</h1><p>Agenda de citas médicas</p></div>
+        <button class="btn btn-primary" onclick="abrirModalCita()">+ Nueva cita</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Hora</th><th>Paciente</th><th>Motivo</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="tableCitas"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══ MODALES ═══ -->
+
+<!-- Modal Paciente -->
+<div class="modal-overlay" id="modalPaciente">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalPacTitulo">Nuevo Paciente</span>
+      <button class="modal-close" onclick="cerrarModal('modalPaciente')">✕</button>
+    </div>
+    <form onsubmit="guardarPaciente(event)">
+      <div class="form-grid">
+        <div class="form-group"><label>Nombre completo *</label><input id="pNombre" required/></div>
+        <div class="form-group"><label>Cédula *</label><input id="pCedula" required/></div>
+        <div class="form-group"><label>Fecha de nacimiento *</label><input type="date" id="pFechaNac" required/></div>
+        <div class="form-group"><label>Sexo *</label>
+          <select id="pSexo"><option>Masculino</option><option>Femenino</option><option>Otro</option></select>
+        </div>
+        <div class="form-group"><label>Teléfono</label><input id="pTelefono"/></div>
+        <div class="form-group"><label>Email</label><input type="email" id="pEmail"/></div>
+        <div class="form-group"><label>Tipo de sangre</label>
+          <select id="pSangre"><option>O+</option><option>O-</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option></select>
+        </div>
+        <div class="form-group"><label>Ocupación</label><input id="pOcupacion"/></div>
+        <div class="form-group full"><label>Alergias conocidas</label><input id="pAlergias" placeholder="Ej: Penicilina, Sulfa…"/></div>
+      </div>
+      <input type="hidden" id="pId"/>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary w-full">Guardar paciente</button>
+        <button type="button" class="btn btn-secondary" onclick="cerrarModal('modalPaciente')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Historia Clínica -->
+<div class="modal-overlay" id="modalHistoria">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <span class="modal-title" id="modalHistTitulo">Historia Clínica</span>
+      <button class="modal-close" onclick="cerrarModal('modalHistoria')">✕</button>
+    </div>
+    <form onsubmit="guardarHistoria(event)">
+      <div class="form-grid">
+        <div class="form-group full"><label>Antecedentes personales</label><textarea id="hPersonales"></textarea></div>
+        <div class="form-group full"><label>Antecedentes familiares</label><textarea id="hFamiliares"></textarea></div>
+        <div class="form-group"><label>Enfermedades crónicas</label><input id="hCronicas"/></div>
+        <div class="form-group"><label>Cirugías previas</label><input id="hCirugias"/></div>
+        <div class="form-group full"><label>Medicamentos actuales</label><textarea id="hMedicamentos" style="min-height:70px"></textarea></div>
+        <div class="form-group"><label>Vacunas</label><input id="hVacunas"/></div>
+      </div>
+      <input type="hidden" id="hId"/>
+      <input type="hidden" id="hPacId"/>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary w-full">Guardar historia</button>
+        <button type="button" class="btn btn-secondary" onclick="cerrarModal('modalHistoria')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Consulta -->
+<div class="modal-overlay" id="modalConsulta">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <span class="modal-title">Nueva Consulta / Receta</span>
+      <button class="modal-close" onclick="cerrarModal('modalConsulta')">✕</button>
+    </div>
+    <form onsubmit="guardarConsulta(event)">
+      <div class="form-grid">
+        <div class="form-group"><label>Paciente *</label>
+          <select id="cPaciente" required></select>
+        </div>
+        <div class="form-group"><label>Fecha *</label><input type="date" id="cFecha" required/></div>
+        <div class="form-group full"><label>Motivo de consulta *</label><input id="cMotivo" required/></div>
+        <div class="form-group full"><label>Diagnóstico *</label><textarea id="cDiagnostico" required></textarea></div>
+        <div class="form-group full"><label>Tratamiento indicado</label><textarea id="cTratamiento"></textarea></div>
+        <div class="form-group full"><label>Medicamentos recetados (uno por línea)</label><textarea id="cMedicamentos" placeholder="Ej: Amoxicilina 500mg – 1 cápsula cada 8 horas por 7 días"></textarea></div>
+        <div class="form-group full"><label>Observaciones</label><textarea id="cObservaciones"></textarea></div>
+      </div>
+      <input type="hidden" id="cId"/>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary w-full">Guardar y generar receta PDF</button>
+        <button type="button" class="btn btn-secondary" onclick="cerrarModal('modalConsulta')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Cita -->
+<div class="modal-overlay" id="modalCita">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalCitaTitulo">Nueva Cita</span>
+      <button class="modal-close" onclick="cerrarModal('modalCita')">✕</button>
+    </div>
+    <form onsubmit="guardarCita(event)">
+      <div class="form-grid">
+        <div class="form-group"><label>Paciente *</label><select id="citPaciente" required></select></div>
+        <div class="form-group"><label>Fecha *</label><input type="date" id="citFecha" required/></div>
+        <div class="form-group"><label>Hora *</label><input type="time" id="citHora" required/></div>
+        <div class="form-group"><label>Estado</label>
+          <select id="citEstado"><option>Programada</option><option>Confirmada</option><option>Completada</option><option>Cancelada</option></select>
+        </div>
+        <div class="form-group full"><label>Motivo *</label><input id="citMotivo" required/></div>
+      </div>
+      <input type="hidden" id="citId"/>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary w-full">Guardar cita</button>
+        <button type="button" class="btn btn-secondary" onclick="cerrarModal('modalCita')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../js/auth.js"></script>
+<script>
+// ─── Init ─────────────────────────────────────────
+const session = requireAuth('medico');
+if (session) {
+  document.getElementById('sidebarNombre').textContent = session.nombre;
+  document.getElementById('sidebarEsp').textContent = session.especialidad;
+  document.getElementById('welcomeMsg').textContent = 'Bienvenido, ' + session.nombre;
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  document.getElementById('fechaHoy').textContent = new Date().toLocaleDateString('es-EC', opts);
+  loadTheme();
+  renderDashboard();
+}
+
+// ─── Navegación ───────────────────────────────────
+function showSection(name) {
+  document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+  document.getElementById('sec-' + name).classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  if (name === 'pacientes') renderPacientes();
+  if (name === 'historias') renderHistorias();
+  if (name === 'consultas') renderConsultas();
+  if (name === 'recetas') renderRecetas();
+  if (name === 'citas') renderCitas();
+}
+
+function calcEdad(fechaNac) {
+  const hoy = new Date(); const nac = new Date(fechaNac);
+  let e = hoy.getFullYear() - nac.getFullYear();
+  if (hoy < new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate())) e--;
+  return e;
+}
+
+// ─── Tema Oscuro ───
+function toggleThemeDash() {
+  const body = document.body;
+  const toggleBtn = document.getElementById('themeToggleDash');
+  if (body.classList.contains('dark-theme')) {
+    body.classList.remove('dark-theme');
+    toggleBtn.textContent = '🌙';
+    localStorage.setItem('theme', 'light');
+  } else {
+    body.classList.add('dark-theme');
+    toggleBtn.textContent = '☀️';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+function loadTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-theme');
+    const toggleBtn = document.getElementById('themeToggleDash');
+    if (toggleBtn) toggleBtn.textContent = '☀️';
+  }
+}
+
+// ─── Dashboard ────────────────────────────────────
+function renderDashboard() {
+  const pacs = getPacientes(); 
+  const cons = getConsultas().filter(c => c.medicoNombre === session.nombre); // Solo consultas del médico actual
+  const cits = getCitas().filter(c => c.medicoNombre === session.nombre); // Solo citas del médico actual
+  const hoy = new Date().toISOString().split('T')[0];
+  const prox = cits.filter(c => c.fecha >= hoy && c.estado !== 'Cancelada');
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-icon teal">👥</div><div><div class="stat-num">${pacs.length}</div><div class="stat-label">Pacientes registrados</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">🩻</div><div><div class="stat-num">${cons.length}</div><div class="stat-label">Consultas realizadas</div></div></div>
+    <div class="stat-card"><div class="stat-icon green">📅</div><div><div class="stat-num">${prox.length}</div><div class="stat-label">Citas próximas</div></div></div>
+    <div class="stat-card"><div class="stat-icon orange">📋</div><div><div class="stat-num">${getHistorias().length}</div><div class="stat-label">Historias clínicas</div></div></div>
+  `;
+
+  document.getElementById('dashCitas').innerHTML = prox.length === 0
+    ? '<p class="text-muted text-center" style="padding:16px">Sin citas próximas asignadas</p>'
+    : prox.slice(0,4).map(c => {
+        const pac = getPacienteById(c.pacienteId);
+        const estadoColor = c.estado === 'Programada' ? 'badge-blue' : c.estado === 'Confirmada' ? 'badge-green' : 'badge-teal';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-200)">
+          <div><strong>${pac ? pac.nombre : 'Paciente'}</strong><br><small class="text-muted">${c.motivo}</small></div>
+          <div style="text-align:right"><div class="badge ${estadoColor}">${c.estado}</div><div style="font-size:0.8rem;margin-top:4px">${c.fecha} 🕐 ${c.hora}</div></div>
+        </div>`;
+      }).join('');
+
+  document.getElementById('dashPacientes').innerHTML = pacs.slice(0,4).map(p => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-200)">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--teal-pale);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--teal-dark)">${p.nombre[0]}</div>
+      <div><strong>${p.nombre}</strong><br><small class="text-muted">${p.cedula}</small></div>
+      <span class="badge badge-teal" style="margin-left:auto">${p.tipoSangre}</span>
+    </div>`).join('');
+}
+
+// ─── Pacientes ────────────────────────────────────
+function renderPacientes() {
+  const q = (document.getElementById('searchPac')?.value || '').toLowerCase();
+  const list = getPacientes().filter(p => p.nombre.toLowerCase().includes(q) || p.cedula.includes(q));
+  document.getElementById('tablePacientes').innerHTML = list.length === 0
+    ? '<tr><td colspan="6" class="text-center text-muted" style="padding:24px">No se encontraron pacientes</td></tr>'
+    : list.map(p => `<tr>
+        <td><strong>${p.nombre}</strong></td>
+        <td>${p.cedula}</td>
+        <td>${calcEdad(p.fechaNac)} años</td>
+        <td><span class="badge badge-teal">${p.tipoSangre}</span></td>
+        <td>${p.telefono || '—'}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-secondary" onclick="editarPaciente('${p.id}')">✏ Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="eliminarPaciente('${p.id}')">🗑</button>
+        </td>
+      </tr>`).join('');
+}
+
+function abrirModalPaciente(id = null) {
+  document.getElementById('modalPacTitulo').textContent = id ? 'Editar Paciente' : 'Nuevo Paciente';
+  ['pNombre','pCedula','pFechaNac','pTelefono','pEmail','pOcupacion','pAlergias','pId'].forEach(f => document.getElementById(f).value = '');
+  if (id) {
+    const p = getPacienteById(id);
+    if (p) { document.getElementById('pNombre').value = p.nombre; document.getElementById('pCedula').value = p.cedula; document.getElementById('pFechaNac').value = p.fechaNac; document.getElementById('pSexo').value = p.sexo; document.getElementById('pTelefono').value = p.telefono || ''; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pSangre').value = p.tipoSangre; document.getElementById('pOcupacion').value = p.ocupacion || ''; document.getElementById('pAlergias').value = p.alergias || ''; document.getElementById('pId').value = p.id; }
+  }
+  abrirModal('modalPaciente');
+}
+function editarPaciente(id) { abrirModalPaciente(id); }
+function eliminarPaciente(id) {
+  if (confirm('¿Eliminar este paciente? Esta acción no se puede deshacer.')) {
+    deletePaciente(id); renderPacientes(); renderDashboard();
+  }
+}
+function guardarPaciente(e) {
+  e.preventDefault();
+  const id = document.getElementById('pId').value || genId();
+  savePaciente({
+    id, nombre: document.getElementById('pNombre').value, cedula: document.getElementById('pCedula').value,
+    fechaNac: document.getElementById('pFechaNac').value, sexo: document.getElementById('pSexo').value,
+    telefono: document.getElementById('pTelefono').value, email: document.getElementById('pEmail').value,
+    tipoSangre: document.getElementById('pSangre').value, ocupacion: document.getElementById('pOcupacion').value,
+    alergias: document.getElementById('pAlergias').value, fechaRegistro: new Date().toISOString().split('T')[0]
+  });
+  cerrarModal('modalPaciente'); renderPacientes(); renderDashboard();
+}
+
+// ─── Historias ────────────────────────────────────
+function renderHistorias() {
+  const q = (document.getElementById('searchHist')?.value || '').toLowerCase();
+  const pacs = getPacientes().filter(p => p.nombre.toLowerCase().includes(q));
+  document.getElementById('tableHistorias').innerHTML = pacs.length === 0
+    ? '<tr><td colspan="4" class="text-center text-muted" style="padding:24px">No se encontraron pacientes</td></tr>'
+    : pacs.map(p => {
+        const h = getHistoriaPorPaciente(p.id);
+        return `<tr>
+          <td><strong>${p.nombre}</strong><br><small class="text-muted">${p.cedula}</small></td>
+          <td>${h ? (h.enfermedadesCronicas || '—') : '<span class="badge badge-orange">Sin historia</span>'}</td>
+          <td>${h ? h.ultimaActualizacion : '—'}</td>
+          <td style="display:flex;gap:6px">
+            <button class="btn btn-sm btn-primary" onclick="editarHistoria('${p.id}')">📋 ${h ? 'Editar' : 'Crear'}</button>
+          </td>
+        </tr>`;
+      }).join('');
+}
+
+function editarHistoria(pacId) {
+  const h = getHistoriaPorPaciente(pacId);
+  const pac = getPacienteById(pacId);
+  document.getElementById('modalHistTitulo').textContent = 'Historia Clínica – ' + (pac ? pac.nombre : '');
+  document.getElementById('hPersonales').value = h?.antecedentesPersonales || '';
+  document.getElementById('hFamiliares').value = h?.antecedentesFamiliares || '';
+  document.getElementById('hCronicas').value   = h?.enfermedadesCronicas || '';
+  document.getElementById('hCirugias').value   = h?.cirugiasPrevias || '';
+  document.getElementById('hMedicamentos').value = h?.medicamentosActuales || '';
+  document.getElementById('hVacunas').value    = h?.vacunas || '';
+  document.getElementById('hId').value         = h?.id || '';
+  document.getElementById('hPacId').value      = pacId;
+  abrirModal('modalHistoria');
+}
+function guardarHistoria(e) {
+  e.preventDefault();
+  const id = document.getElementById('hId').value || genId();
+  const pacId = document.getElementById('hPacId').value;
+  saveHistoria({
+    id, pacienteId: pacId,
+    antecedentesPersonales: document.getElementById('hPersonales').value,
+    antecedentesFamiliares: document.getElementById('hFamiliares').value,
+    enfermedadesCronicas:   document.getElementById('hCronicas').value,
+    cirugiasPrevias:        document.getElementById('hCirugias').value,
+    medicamentosActuales:   document.getElementById('hMedicamentos').value,
+    vacunas:                document.getElementById('hVacunas').value,
+    fechaCreacion: id === document.getElementById('hId').value ? undefined : new Date().toISOString().split('T')[0],
+    ultimaActualizacion: new Date().toISOString().split('T')[0]
+  });
+  cerrarModal('modalHistoria'); renderHistorias();
+}
+
+// ─── Consultas ────────────────────────────────────
+function renderConsultas() {
+  const q = (document.getElementById('searchCons')?.value || '').toLowerCase();
+  const list = getConsultas()
+    .filter(c => c.medicoNombre === session.nombre) // Solo consultas del médico actual
+    .filter(c => {
+      const pac = getPacienteById(c.pacienteId);
+      return !q || (pac && pac.nombre.toLowerCase().includes(q));
+    }).sort((a,b) => b.fecha.localeCompare(a.fecha));
+  document.getElementById('tableConsultas').innerHTML = list.length === 0
+    ? '<tr><td colspan="4" class="text-center text-muted" style="padding:24px">Sin consultas registradas por usted</td></tr>'
+    : list.map(c => {
+        const pac = getPacienteById(c.pacienteId);
+        return `<tr>
+          <td>${c.fecha}</td>
+          <td>${pac ? pac.nombre : '—'}</td>
+          <td>${c.diagnostico?.substring(0,50)}${c.diagnostico?.length > 50 ? '…' : ''}</td>
+          <td style="display:flex;gap:6px">
+            <button class="btn btn-sm btn-success" onclick="generarRecetaPDF('${c.id}')">📄 Receta PDF</button>
+          </td>
+        </tr>`;
+      }).join('');
+}
+
+function abrirModalConsulta() {
+  const pacs = getPacientes();
+  document.getElementById('cPaciente').innerHTML = pacs.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  document.getElementById('cFecha').value = new Date().toISOString().split('T')[0];
+  ['cMotivo','cDiagnostico','cTratamiento','cMedicamentos','cObservaciones'].forEach(f => document.getElementById(f).value = '');
+  document.getElementById('cId').value = '';
+  abrirModal('modalConsulta');
+}
+
+function guardarConsulta(e) {
+  e.preventDefault();
+  const id = genId();
+  const c = {
+    id, pacienteId: document.getElementById('cPaciente').value,
+    fecha: document.getElementById('cFecha').value,
+    motivo: document.getElementById('cMotivo').value,
+    diagnostico: document.getElementById('cDiagnostico').value,
+    tratamiento: document.getElementById('cTratamiento').value,
+    medicamentos: document.getElementById('cMedicamentos').value,
+    observaciones: document.getElementById('cObservaciones').value,
+    medicoNombre: session.nombre
+  };
+  saveConsulta(c);
+  cerrarModal('modalConsulta');
+  generarRecetaPDF(id);
+  renderConsultas(); renderDashboard();
+}
+
+// ─── Receta PDF ───────────────────────────────────
+function generarRecetaPDF(consultaId) {
+  const c = getConsultas().find(x => x.id === consultaId);
+  if (!c) return;
+  const pac = getPacienteById(c.pacienteId);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // Encabezado
+  doc.setFillColor(13, 79, 124);
+  doc.rect(0, 0, 210, 38, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(18); doc.setFont('helvetica','bold');
+  doc.text('MediSys', 14, 16);
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('Sistema de Gestión Clínica', 14, 23);
+  doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text('RECETA MÉDICA', 210/2, 31, { align:'center' });
+
+  // Médico
+  doc.setTextColor(13, 79, 124); doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text(c.medicoNombre || 'Médico', 14, 50);
+  doc.setTextColor(100,100,100); doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('Médico General Cirujano', 14, 56);
+  doc.text('Fecha: ' + c.fecha, 150, 50);
+  doc.text('No. ' + c.id.toUpperCase(), 150, 56);
+
+  doc.setDrawColor(20,168,154); doc.setLineWidth(0.8);
+  doc.line(14, 62, 196, 62);
+
+  // Datos paciente
+  doc.setTextColor(13, 79, 124); doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('DATOS DEL PACIENTE', 14, 72);
+  doc.setTextColor(60,60,60); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text('Nombre: ' + (pac?.nombre || '—'), 14, 80);
+  doc.text('Cédula: ' + (pac?.cedula || '—'), 14, 87);
+  doc.text('Edad: ' + (pac ? calcEdad(pac.fechaNac) + ' años' : '—'), 120, 80);
+  doc.text('Alergias: ' + (pac?.alergias || 'Ninguna'), 120, 87);
+
+  doc.line(14, 94, 196, 94);
+
+  // Diagnóstico
+  doc.setTextColor(13, 79, 124); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text('DIAGNÓSTICO', 14, 103);
+  doc.setTextColor(60,60,60); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  const diagLines = doc.splitTextToSize(c.diagnostico || '—', 180);
+  doc.text(diagLines, 14, 111);
+  let y = 111 + diagLines.length * 6;
+
+  // Medicamentos
+  doc.setTextColor(13, 79, 124); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text('MEDICAMENTOS RECETADOS', 14, y + 8);
+  y += 16;
+  doc.setTextColor(60,60,60); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  const meds = (c.medicamentos || 'Sin medicamentos').split('\n');
+  meds.forEach((m, i) => {
+    if (m.trim()) { doc.text('• ' + m.trim(), 18, y); y += 7; }
+  });
+
+  // Tratamiento
+  if (c.tratamiento) {
+    doc.setTextColor(13, 79, 124); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text('INDICACIONES', 14, y + 6);
+    y += 14;
+    doc.setTextColor(60,60,60); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    const trLines = doc.splitTextToSize(c.tratamiento, 180);
+    doc.text(trLines, 14, y); y += trLines.length * 6;
+  }
+
+  // Observaciones
+  if (c.observaciones) {
+    doc.setTextColor(13, 79, 124); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text('OBSERVACIONES', 14, y + 6);
+    y += 14;
+    doc.setTextColor(60,60,60); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.text(doc.splitTextToSize(c.observaciones, 180), 14, y); y += 10;
+  }
+
+  // Firma
+  doc.setDrawColor(20,168,154); doc.line(14, y + 14, 196, y + 14);
+  doc.setTextColor(100,100,100); doc.setFontSize(8);
+  doc.text('Firma del médico: ________________________', 14, y + 22);
+  doc.text('Este documento es generado electrónicamente por MediSys.', 14, y + 30);
+
+  // Footer
+  doc.setFillColor(13, 79, 124);
+  doc.rect(0, 282, 210, 15, 'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(8);
+  doc.text('MediSys – Sistema de Gestión Clínica | Quito, Ecuador', 210/2, 291, { align:'center' });
+
+  doc.save('Receta_' + (pac?.nombre?.replace(/ /g,'_') || 'Paciente') + '_' + c.fecha + '.pdf');
+}
+
+// ─── Recetas ─────────────────────────────────────
+function renderRecetas() {
+  const q = (document.getElementById('searchRec')?.value || '').toLowerCase();
+  const list = getConsultas()
+    .filter(c => c.medicoNombre === session.nombre) // Solo recetas del médico actual
+    .filter(c => c.medicamentos && c.medicamentos.trim())
+    .filter(c => {
+      const pac = getPacienteById(c.pacienteId);
+      return !q || (pac && pac.nombre.toLowerCase().includes(q));
+    }).sort((a,b) => b.fecha.localeCompare(a.fecha));
+  document.getElementById('tableRecetas').innerHTML = list.length === 0
+    ? '<tr><td colspan="4" class="text-center text-muted" style="padding:24px">Sin recetas generadas por usted</td></tr>'
+    : list.map(c => {
+        const pac = getPacienteById(c.pacienteId);
+        const meds = c.medicamentos.split('\n').filter(m => m.trim()).slice(0,2).join(', ');
+        return `<tr>
+          <td>${c.fecha}</td>
+          <td>${pac ? pac.nombre : '—'}</td>
+          <td>${meds}${c.medicamentos.split('\n').length > 2 ? '...' : ''}</td>
+          <td style="display:flex;gap:6px">
+            <button class="btn btn-sm btn-success" onclick="generarRecetaPDF('${c.id}')">📄 Ver PDF</button>
+          </td>
+        </tr>`;
+      }).join('');
+}
+
+// ─── Citas ────────────────────────────────────────
+function renderCitas() {
+  const list = getCitas()
+    .filter(c => c.medicoNombre === session.nombre) // Solo mostrar citas del médico actual
+    .sort((a,b) => a.fecha.localeCompare(b.fecha));
+  const estadoClase = { 'Programada':'badge-blue','Confirmada':'badge-green','Completada':'badge-teal','Cancelada':'badge-red' };
+  document.getElementById('tableCitas').innerHTML = list.length === 0
+    ? '<tr><td colspan="6" class="text-center text-muted" style="padding:24px">Sin citas registradas asignadas a usted</td></tr>'
+    : list.map(c => {
+        const pac = getPacienteById(c.pacienteId);
+        return `<tr>
+          <td>${c.fecha}</td><td>🕐 ${c.hora}</td>
+          <td><strong>${pac ? pac.nombre : '—'}</strong></td>
+          <td>${c.motivo}</td>
+          <td><span class="badge ${estadoClase[c.estado] || 'badge-blue'}">${c.estado}</span></td>
+          <td style="display:flex;gap:6px">
+            <button class="btn btn-sm btn-primary" onclick="cambiarEstadoCita('${c.id}')" title="Cambiar estado">📊</button>
+            <button class="btn btn-sm btn-secondary" onclick="editarCita('${c.id}')">✏</button>
+            <button class="btn btn-sm btn-danger" onclick="eliminarCita('${c.id}')">🗑</button>
+          </td>
+        </tr>`;
+      }).join('');
+}
+
+function cambiarEstadoCita(citaId) {
+  const cita = getCitas().find(c => c.id === citaId);
+  if (!cita) return;
+  const estados = ['Programada', 'Confirmada', 'Completada', 'Cancelada'];
+  const indiceActual = estados.indexOf(cita.estado);
+  const nuevoEstado = estados[(indiceActual + 1) % estados.length];
+  cita.estado = nuevoEstado;
+  saveCita(cita);
+  renderCitas();
+  renderDashboard();
+}
+
+function abrirModalCita(id = null) {
+  const pacs = getPacientes();
+  document.getElementById('citPaciente').innerHTML = pacs.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  document.getElementById('modalCitaTitulo').textContent = id ? 'Editar Cita' : 'Nueva Cita';
+  ['citFecha','citHora','citMotivo','citId'].forEach(f => document.getElementById(f).value = '');
+  if (id) {
+    const ct = getCitas().find(x => x.id === id);
+    if (ct) { document.getElementById('citPaciente').value = ct.pacienteId; document.getElementById('citFecha').value = ct.fecha; document.getElementById('citHora').value = ct.hora; document.getElementById('citMotivo').value = ct.motivo; document.getElementById('citEstado').value = ct.estado; document.getElementById('citId').value = ct.id; }
+  }
+  abrirModal('modalCita');
+}
+function editarCita(id) { abrirModalCita(id); }
+function eliminarCita(id) {
+  if (confirm('¿Eliminar esta cita?')) { deleteCita(id); renderCitas(); renderDashboard(); }
+}
+function guardarCita(e) {
+  e.preventDefault();
+  const id = document.getElementById('citId').value || genId();
+  saveCita({
+    id, pacienteId: document.getElementById('citPaciente').value,
+    fecha: document.getElementById('citFecha').value,
+    hora: document.getElementById('citHora').value,
+    motivo: document.getElementById('citMotivo').value,
+    estado: document.getElementById('citEstado').value,
+    medicoNombre: session.nombre
+  });
+  cerrarModal('modalCita'); renderCitas(); renderDashboard();
+}
+
+// ─── Modales helpers ──────────────────────────────
+function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+function calcEdad(fechaNac) {
+  const hoy = new Date(); const nac = new Date(fechaNac);
+  let e = hoy.getFullYear() - nac.getFullYear();
+  if (hoy < new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate())) e--;
+  return e;
+}
+</script>
+</body>
+</html>

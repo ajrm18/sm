@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediSys – Mi Portal</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Lora:ital@0;1&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 60 60" fill="none"><rect x="24" y="6" width="12" height="48" rx="6" fill="white" opacity="0.95"/><rect x="6" y="24" width="48" height="12" rx="6" fill="white" opacity="0.95"/></svg>
+      <div class="sidebar-logo-text"><h2>MediSys</h2><span>Mi Portal</span></div>
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">🧑</div>
+      <div class="sidebar-user-name" id="sidebarNombre">—</div>
+      <div class="sidebar-user-role">Paciente</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">Mi información</div>
+      <a class="nav-item active" onclick="showSection('inicio')"><span class="nav-icon">🏠</span> Inicio</a>
+      <a class="nav-item" onclick="showSection('agendar')"><span class="nav-icon">📅</span> Agendar Cita</a>
+      <a class="nav-item" onclick="showSection('citas')"><span class="nav-icon">📋</span> Mis Citas</a>
+      <a class="nav-item" onclick="showSection('consultas')"><span class="nav-icon">📝</span> Mis Consultas</a>
+      <a class="nav-item" onclick="showSection('recetas')"><span class="nav-icon">💊</span> Mis Recetas</a>
+      <div class="sidebar-section" style="margin-top:24px">Configuración</div>
+      <a class="nav-item" onclick="showSection('cambiar-password')"><span class="nav-icon">🔐</span> Cambiar Contraseña</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">⬅ Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <!-- CONTENIDO -->
+  <main class="main-content">
+    <div class="theme-toggle-dashboard">
+      <button id="themeToggleDash" onclick="toggleThemeDash()" title="Cambiar tema">🌙</button>
+    </div>
+
+    <!-- ══ INICIO ══ -->
+    <section id="sec-inicio">
+      <div class="page-header">
+        <div class="page-title">
+          <h1 id="welcomeMsg">Hola</h1>
+          <p id="fechaHoy"></p>
+        </div>
+      </div>
+
+      <div id="pacFicha"></div>
+
+      <div class="info-cards" id="infoCards"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📅 Próximas citas</span></div>
+          <div id="proxCitas"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🩻 Última consulta</span></div>
+          <div id="ultConsulta"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ AGENDAR ══ -->
+    <section id="sec-agendar" class="hidden">
+      <div class="page-header">
+        <div class="page-title"><h1>📅 Agendar Cita</h1><p>Seleccione la especialidad y médico deseado</p></div>
+      </div>
+      <div class="card">
+        <form id="agendarForm" onsubmit="handleAgendar(event)">
+          <input type="hidden" id="citId" />
+          <div id="agendarError" class="alert alert-danger hidden"></div>
+          <div class="field-group">
+            <label for="especialidad">🏥 Especialidad</label>
+            <select id="especialidad" required onchange="loadDoctores()">
+              <option value="">Seleccione una especialidad</option>
+              <option value="Médico General">Médico General</option>
+              <option value="Cardiología">Cardiología</option>
+              <option value="Dermatología">Dermatología</option>
+              <option value="Pediatría">Pediatría</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="medico">👨‍⚕️ Médico</label>
+            <select id="medico" required>
+              <option value="">Primero seleccione especialidad</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="fecha">📆 Fecha</label>
+            <input type="date" id="fecha" required min=""/>
+          </div>
+          <div class="field-group">
+            <label for="hora">🕐 Hora</label>
+            <select id="hora" required>
+              <option value="08:00">08:00</option>
+              <option value="09:00">09:00</option>
+              <option value="10:00">10:00</option>
+              <option value="11:00">11:00</option>
+              <option value="14:00">14:00</option>
+              <option value="15:00">15:00</option>
+              <option value="16:00">16:00</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="motivo">📝 Motivo de la consulta</label>
+            <textarea id="motivo" placeholder="Describa brevemente el motivo" required></textarea>
+          </div>
+          <button type="submit" class="btn-login" style="width:auto">
+            <span>Agendar Cita</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ══ CITAS ══ -->
+    <section id="sec-citas" class="hidden">
+      <div class="page-header">
+        <div class="page-title"><h1>Mis Citas</h1><p>Citas programadas con su médico</p></div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Hora</th><th>Médico</th><th>Motivo</th><th>Estado</th></tr></thead>
+            <tbody id="tableCitasPac"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ CONSULTAS ══ -->
+    <section id="sec-consultas" class="hidden">
+      <div class="page-header">
+        <div class="page-title"><h1>📝 Mis Consultas</h1><p>Historial de atenciones médicas</p></div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Motivo</th><th>Diagnóstico</th><th>Médico</th><th>Acciones</th></tr></thead>
+            <tbody id="tableConsPac"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ RECETAS ══ -->
+    <section id="sec-recetas" class="hidden">
+      <div class="page-header">
+        <div class="page-title"><h1>💊 Mis Recetas</h1><p>Descargue sus recetas médicas en PDF</p></div>
+      </div>
+      <div class="alert alert-info">ℹ️ Sus recetas son emitidas por su médico tratante. Puede descargarlas aquí como respaldo digital.</div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Diagnóstico</th><th>Médico</th><th>Medicamentos</th><th>Descarga</th></tr></thead>
+            <tbody id="tableRecetasPac"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ CAMBIAR CONTRASEÑA ══ -->
+    <section id="sec-cambiar-password" class="hidden">
+      <div class="page-header">
+        <div class="page-title"><h1>Cambiar Contraseña</h1><p>Actualice su contraseña de forma segura</p></div>
+      </div>
+      <div class="card" style="max-width:500px">
+        <form id="changePasswordForm" onsubmit="handleChangePassword(event)">
+          <div class="field-group">
+            <label for="currentPassword">Contraseña Actual</label>
+            <div class="pw-wrap">
+              <input type="password" id="currentPassword" placeholder="Ingrese su contraseña actual" required/>
+              <button type="button" class="pw-toggle" onclick="togglePasswordField('currentPassword')">👁</button>
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="newPassword">Nueva Contraseña</label>
+            <div class="pw-wrap">
+              <input type="password" id="newPassword" placeholder="Ingrese su nueva contraseña" required/>
+              <button type="button" class="pw-toggle" onclick="togglePasswordField('newPassword')">👁</button>
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="confirmPassword">Confirmar Nueva Contraseña</label>
+            <div class="pw-wrap">
+              <input type="password" id="confirmPassword" placeholder="Confirme su nueva contraseña" required/>
+              <button type="button" class="pw-toggle" onclick="togglePasswordField('confirmPassword')">👁</button>
+            </div>
+          </div>
+          <div id="changePasswordError" class="login-error" style="display:none"></div>
+          <div id="changePasswordSuccess" class="alert alert-success" style="display:none;margin-bottom:16px">
+            ✓ Contraseña actualizada exitosamente.
+          </div>
+          <button type="submit" class="btn-login" style="width:auto">
+            <span>Actualizar Contraseña</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Modal detalle consulta -->
+<div class="modal-overlay" id="modalDetalle">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <span class="modal-title">Detalle de Consulta</span>
+      <button class="modal-close" onclick="cerrarModal('modalDetalle')">✕</button>
+    </div>
+    <div id="detalleBody"></div>
+  </div>
+</div>
+
+<script src="../js/auth.js"></script>
+<script>
+const session = requireAuth('paciente');
+let pacienteData = null;
+
+if (session) {
+  document.getElementById('sidebarNombre').textContent = session.nombre;
+  document.getElementById('welcomeMsg').textContent = 'Hola, ' + session.nombre.split(' ')[0] + ' 👋';
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  document.getElementById('fechaHoy').textContent = new Date().toLocaleDateString('es-EC', opts);
+  pacienteData = getPacienteById(session.id);
+  loadTheme();
+  renderInicio();
+}
+
+function showSection(name) {
+  document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+  document.getElementById('sec-' + name).classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (typeof event !== 'undefined' && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  }
+  if (name === 'citas') renderCitasPac();
+  if (name === 'consultas') renderConsPac();
+  if (name === 'recetas') renderRecetasPac();
+  if (name === 'agendar') renderAgendar();
+}
+
+// ─── Tema Oscuro ───
+function toggleThemeDash() {
+  const body = document.body;
+  const toggleBtn = document.getElementById('themeToggleDash');
+  if (body.classList.contains('dark-theme')) {
+    body.classList.remove('dark-theme');
+    toggleBtn.textContent = '🌙';
+    localStorage.setItem('theme', 'light');
+  } else {
+    body.classList.add('dark-theme');
+    toggleBtn.textContent = '☀️';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+function loadTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-theme');
+    const toggleBtn = document.getElementById('themeToggleDash');
+    if (toggleBtn) toggleBtn.textContent = '☀️';
+  }
+}
+
+function calcEdad(fechaNac) {
+  const hoy = new Date(); const nac = new Date(fechaNac);
+  let e = hoy.getFullYear() - nac.getFullYear();
+  if (hoy < new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate())) e--;
+  return e;
+}
+
+function renderInicio() {
+  const pac = pacienteData;
+  const hoy = new Date().toISOString().split('T')[0];
+  const citas = getCitasPorPaciente(session.id);
+  const consultas = getConsultasPorPaciente(session.id);
+  const proxCitas = citas.filter(c => c.fecha >= hoy && c.estado !== 'Cancelada');
+
+  // Ficha
+  if (pac) {
+    document.getElementById('pacFicha').innerHTML = `
+      <div class="patient-header">
+        <div class="patient-avatar">${pac.nombre[0]}</div>
+        <div class="patient-info">
+          <h2>${pac.nombre}</h2>
+          <p>Cédula: ${pac.cedula} &nbsp;|&nbsp; ${calcEdad(pac.fechaNac)} años &nbsp;|&nbsp; ${pac.sexo}</p>
+          <div class="patient-meta">
+            <span class="badge badge-teal">🩸 Sangre: ${pac.tipoSangre}</span>
+            <span class="badge badge-orange">⚠️ Alergias: ${pac.alergias || 'Ninguna'}</span>
+            <span class="badge badge-blue">💼 ${pac.ocupacion || ''}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('infoCards').innerHTML = `
+    <div class="info-card"><div class="info-card-icon">📅</div><div class="info-card-val">${proxCitas.length}</div><div class="info-card-label">Próximas citas</div></div>
+    <div class="info-card"><div class="info-card-icon">🩻</div><div class="info-card-val">${consultas.length}</div><div class="info-card-label">Consultas registradas</div></div>
+    <div class="info-card"><div class="info-card-icon">💊</div><div class="info-card-val">${consultas.length}</div><div class="info-card-label">Recetas disponibles</div></div>
+  `;
+
+  document.getElementById('proxCitas').innerHTML = proxCitas.length === 0
+    ? '<p class="text-muted text-center" style="padding:16px">No tiene citas próximas programadas</p>'
+    : proxCitas.slice(0,3).map(c => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--gray-200)">
+          <div>
+            <strong>${c.motivo}</strong><br>
+            <small class="text-muted">${c.medicoNombre}</small>
+          </div>
+          <div style="text-align:right">
+            <div class="badge badge-blue">${c.fecha}</div>
+            <div style="font-size:0.82rem;margin-top:4px;color:var(--teal-dark)">🕐 ${c.hora}</div>
+          </div>
+        </div>`).join('');
+
+  if (consultas.length > 0) {
+    const ult = consultas[0];
+    document.getElementById('ultConsulta').innerHTML = `
+      <div style="padding:4px 0">
+        <div class="badge badge-teal" style="margin-bottom:10px">${ult.fecha}</div>
+        <p style="font-size:0.88rem;margin-bottom:6px"><strong>Diagnóstico:</strong> ${ult.diagnostico}</p>
+        <p style="font-size:0.88rem;margin-bottom:6px"><strong>Médico:</strong> ${ult.medicoNombre}</p>
+        <p style="font-size:0.88rem"><strong>Tratamiento:</strong> ${ult.tratamiento || '—'}</p>
+        <button class="btn btn-sm btn-success" style="margin-top:12px" onclick="descargarReceta('${ult.id}')">📄 Descargar receta</button>
+      </div>`;
+  } else {
+    document.getElementById('ultConsulta').innerHTML = '<p class="text-muted text-center" style="padding:16px">Sin consultas registradas</p>';
+  }
+}
+
+function renderCitasPac() {
+  const list = getCitasPorPaciente(session.id);
+  const estadoClase = { 'Programada':'badge-blue','Confirmada':'badge-green','Completada':'badge-teal','Cancelada':'badge-red' };
+  document.getElementById('tableCitasPac').innerHTML = list.length === 0
+    ? '<tr><td colspan="6" class="text-center text-muted" style="padding:24px">No tiene citas registradas</td></tr>'
+    : list.map(c => `<tr>
+        <td><strong>${c.fecha}</strong></td>
+        <td>🕐 ${c.hora}</td>
+        <td>${c.medicoNombre}</td>
+        <td>${c.motivo}</td>
+        <td><span class="badge ${estadoClase[c.estado] || 'badge-blue'}">${c.estado}</span></td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-secondary" onclick="editarCitaPaciente('${c.id}')">✏ Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="cancelarCitaPaciente('${c.id}')">🗙 Cancelar</button>
+        </td>
+      </tr>`).join('');
+}
+
+function renderConsPac() {
+  const list = getConsultasPorPaciente(session.id);
+  document.getElementById('tableConsPac').innerHTML = list.length === 0
+    ? '<tr><td colspan="5" class="text-center text-muted" style="padding:24px">No tiene consultas registradas</td></tr>'
+    : list.map(c => `<tr>
+        <td>${c.fecha}</td>
+        <td>${c.motivo}</td>
+        <td>${c.diagnostico?.substring(0,50)}${c.diagnostico?.length > 50 ? '…' : ''}</td>
+        <td>${c.medicoNombre}</td>
+        <td><button class="btn btn-sm btn-secondary" onclick="verDetalle('${c.id}')">Ver detalle</button></td>
+      </tr>`).join('');
+}
+
+function renderRecetasPac() {
+  const list = getConsultasPorPaciente(session.id).filter(c => c.medicamentos && c.medicamentos.trim());
+  document.getElementById('tableRecetasPac').innerHTML = list.length === 0
+    ? '<tr><td colspan="5" class="text-center text-muted" style="padding:24px">No tiene recetas disponibles</td></tr>'
+    : list.map(c => {
+        const medicamentosArr = (c.medicamentos || '').split('\n').filter(m => m.trim());
+        return `<tr>
+          <td><strong>${c.fecha}</strong></td>
+          <td>${c.diagnostico?.substring(0,40)}${c.diagnostico?.length > 40 ? '…' : ''}</td>
+          <td>👨‍⚕️ ${c.medicoNombre}</td>
+          <td>
+            <div style="max-height:80px;overflow-y:auto;font-size:0.85rem">
+              ${medicamentosArr.map(m => `<div style="padding:2px 0">💊 ${m}</div>`).join('')}
+            </div>
+          </td>
+          <td><button class="btn btn-sm btn-success" onclick="descargarReceta('${c.id}')">📄 Descargar PDF</button></td>
+        </tr>`;
+      }).join('');
+}
+
+function verDetalle(consultaId) {
+  const c = getConsultasPorPaciente(session.id).find(x => x.id === consultaId);
+  if (!c) return;
+  document.getElementById('detalleBody').innerHTML = `
+    <div style="display:grid;gap:14px">
+      <div><span class="badge badge-teal">${c.fecha}</span></div>
+      <div><strong>Motivo:</strong> ${c.motivo}</div>
+      <div><strong>Diagnóstico:</strong> ${c.diagnostico}</div>
+      <div><strong>Tratamiento:</strong> ${c.tratamiento || '—'}</div>
+      <div><strong>Medicamentos:</strong><br><pre style="font-family:inherit;white-space:pre-wrap;font-size:0.88rem;margin-top:4px">${c.medicamentos || '—'}</pre></div>
+      <div><strong>Observaciones:</strong> ${c.observaciones || '—'}</div>
+      <div><strong>Médico:</strong> ${c.medicoNombre}</div>
+      <button class="btn btn-success w-full" onclick="descargarReceta('${c.id}')">📄 Descargar receta PDF</button>
+    </div>`;
+  abrirModal('modalDetalle');
+}
+
+function descargarReceta(consultaId) {
+  const c = getConsultasPorPaciente(session.id).find(x => x.id === consultaId)
+         || getConsultas().find(x => x.id === consultaId);
+  if (!c) return;
+  const pac = pacienteData;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFillColor(13, 79, 124);
+  doc.rect(0, 0, 210, 38, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(18); doc.setFont('helvetica','bold');
+  doc.text('MediSys', 14, 16);
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('Sistema de Gestión Clínica', 14, 23);
+  doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text('RECETA MÉDICA', 210/2, 31, { align:'center' });
+
+  doc.setTextColor(13, 79, 124); doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text(c.medicoNombre || 'Médico', 14, 50);
+  doc.setTextColor(100,100,100); doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('Médico General Cirujano', 14, 56);
+  doc.text('Fecha: ' + c.fecha, 150, 50);
+  doc.setDrawColor(20,168,154); doc.setLineWidth(0.8); doc.line(14, 62, 196, 62);
+
+  doc.setTextColor(13, 79, 124); doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('DATOS DEL PACIENTE', 14, 72);
+  doc.setTextColor(60,60,60); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text('Nombre: ' + (pac?.nombre || session.nombre), 14, 80);
+  doc.text('Cédula: ' + (pac?.cedula || '—'), 14, 87);
+
+  doc.line(14, 94, 196, 94);
+  doc.setTextColor(13, 79, 124); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text('DIAGNÓSTICO', 14, 103);
+  doc.setTextColor(60,60,60); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  const diagLines = doc.splitTextToSize(c.diagnostico || '—', 180);
+  doc.text(diagLines, 14, 111);
+  let y = 111 + diagLines.length * 6;
+
+  doc.setTextColor(13, 79, 124); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text('MEDICAMENTOS', 14, y + 8); y += 16;
+  doc.setTextColor(60,60,60); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  (c.medicamentos || '—').split('\n').forEach(m => { if (m.trim()) { doc.text('• ' + m.trim(), 18, y); y += 7; } });
+
+  if (c.tratamiento) {
+    doc.setTextColor(13, 79, 124); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text('INDICACIONES', 14, y + 6); y += 14;
+    doc.setTextColor(60,60,60); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.text(doc.splitTextToSize(c.tratamiento, 180), 14, y); y += 10;
+  }
+
+  doc.setDrawColor(20,168,154); doc.line(14, y + 14, 196, y + 14);
+  doc.setTextColor(100,100,100); doc.setFontSize(8);
+  doc.text('Documento generado electrónicamente por MediSys.', 14, y + 22);
+  doc.setFillColor(13, 79, 124); doc.rect(0, 282, 210, 15, 'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(8);
+  doc.text('MediSys – Sistema de Gestión Clínica | Quito, Ecuador', 210/2, 291, { align:'center' });
+
+  doc.save('Receta_' + c.fecha + '.pdf');
+}
+
+function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+function renderAgendar() {
+  // Reset form
+  document.getElementById('agendarForm').reset();
+  const fechaInput = document.getElementById('fecha');
+  if (fechaInput) {
+    fechaInput.min = new Date().toISOString().split('T')[0];
+  }
+  loadDoctores();
+}
+
+function loadDoctores() {
+  const esp = document.getElementById('especialidad').value;
+  const select = document.getElementById('medico');
+  select.innerHTML = '<option value="">Seleccione un médico</option>';
+  if (esp) {
+    const medicos = getMedicos().filter(m => m.especialidad === esp);
+    medicos.forEach(m => {
+      select.innerHTML += `<option value="${m.id}">${m.nombre}</option>`;
+    });
+  }
+}
+
+function mostrarErrorAgendar(mensaje) {
+  const errorDiv = document.getElementById('agendarError');
+  errorDiv.textContent = mensaje;
+  errorDiv.classList.remove('hidden');
+}
+
+function ocultarErrorAgendar() {
+  const errorDiv = document.getElementById('agendarError');
+  errorDiv.textContent = '';
+  errorDiv.classList.add('hidden');
+}
+
+function handleAgendar(event) {
+  event.preventDefault();
+  ocultarErrorAgendar();
+
+  const esp = document.getElementById('especialidad').value;
+  const medId = document.getElementById('medico').value;
+  const fecha = document.getElementById('fecha').value;
+  const hora = document.getElementById('hora').value;
+  const motivo = document.getElementById('motivo').value;
+
+  if (!esp || !medId || !fecha || !hora || !motivo) {
+    mostrarErrorAgendar('Complete todos los campos del formulario antes de agendar.');
+    return;
+  }
+
+  const medico = getMedicos().find(m => m.id === medId);
+  if (!medico) {
+    mostrarErrorAgendar('Seleccione un médico válido.');
+    return;
+  }
+
+  const seleccion = new Date(fecha + 'T' + hora);
+  const ahora = new Date();
+  if (seleccion <= ahora) {
+    mostrarErrorAgendar('No se puede agendar una cita en una fecha u hora pasada.');
+    return;
+  }
+
+  const cita = {
+    id: genId(),
+    pacienteId: session.id,
+    medicoId: medId,
+    medicoNombre: medico.nombre,
+    fecha,
+    hora,
+    motivo,
+    estado: 'Programada'
+  };
+
+  try {
+    saveCita(cita);
+    alert('Cita agendada exitosamente.');
+    showSection('citas');
+  } catch (error) {
+    mostrarErrorAgendar(error.message || 'No se pudo agendar la cita.');
+  }
+}
+
+// Editar y cancelar citas (paciente)
+function editarCitaPaciente(id) {
+  const c = getCitas().find(x => x.id === id);
+  if (!c) return;
+  // llenar formulario
+  document.getElementById('citId').value = c.id;
+  document.getElementById('especialidad').value = '';
+  // seleccionar medico; si no está cargado, forzamos carga
+  const medSelect = document.getElementById('medico');
+  // llenar fecha/hora/motivo
+  document.getElementById('fecha').value = c.fecha;
+  document.getElementById('hora').value = c.hora;
+  document.getElementById('motivo').value = c.motivo;
+  // mostrar sección agendar
+  showSection('agendar');
+}
+
+function cancelarCitaPaciente(id) {
+  if (!confirm('¿Cancelar esta cita?')) return;
+  const citas = getCitas();
+  const idx = citas.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  citas[idx].estado = 'Cancelada';
+  setData('citas', citas);
+  renderCitasPac(); renderInicio();
+}
+
+function togglePasswordField(fieldId) {
+  const field = document.getElementById(fieldId);
+  field.type = field.type === 'password' ? 'text' : 'password';
+}
+
+function handleChangePassword(event) {
+  event.preventDefault();
+  const currentPassword = document.getElementById('currentPassword').value;
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  const errorDiv = document.getElementById('changePasswordError');
+  const successDiv = document.getElementById('changePasswordSuccess');
+  
+  errorDiv.style.display = 'none';
+  successDiv.style.display = 'none';
+  
+  if (newPassword !== confirmPassword) {
+    errorDiv.textContent = 'Las contraseñas nuevas no coinciden.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  if (newPassword.length < 4) {
+    errorDiv.textContent = 'La contraseña debe tener al menos 4 caracteres.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  const result = cambiarPassword(session.id, currentPassword, newPassword);
+  if (result.ok) {
+    successDiv.style.display = 'block';
+    document.getElementById('changePasswordForm').reset();
+    setTimeout(() => {
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+    }, 3000);
+  } else {
+    errorDiv.textContent = result.msg;
+    errorDiv.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>
